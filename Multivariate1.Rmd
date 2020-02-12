@@ -1,0 +1,175 @@
+---
+title: "Multivariate1.rmd"
+author: "Kristan Ramirez"
+date: "10/18/2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+Problem 1. 
+a). How many rows are in n X 3 matrix? How many columns? Choose a number for n
+then give an example in R. 
+
+```{r}
+# a). If n=6, then the matrix would = 6 X 3, which would = 6 rows and 3 columns
+A <- matrix(c(11,12,-14,77,3,-2,14,12,8,1,-6,-33,23,-14,36,13,17,-7), ncol=3, byrow=T)
+A
+dim(A)
+```
+
+Problem 1.
+b) Give an example of a 3 X 2 matrix in R. 
+
+```{r}
+# b) 3 X 2 would equal 3 rows, 2 columns 
+B <-matrix(c(3,4,2,8,5,3), ncol=2, byrow=T)
+B
+dim(B)
+```
+
+Problem 2.
+a)Is it solvable? Yes. Since the first set's number of columns matches the number of rows in the second set, it is solvable.
+
+```{r}
+Problem_Two_a <- matrix(c(2,-1,1,2),ncol=2, byrow=T)
+# Problem_Two_a
+Problem_Two_aa <-matrix(c(1,1,2,2,0,1), ncol=3, byrow=T)
+# Problem_Two_aa
+Problem_Two_a %*% Problem_Two_aa
+```
+
+Problem 2. 
+b)Is it solvable? Yes.  Since the first set's number of columns matches the number of rows in the second set, it is solvable.
+
+```{r}
+Problem_Two_b <- matrix(c(1,0,2,1,-2,1),ncol=2, byrow=T)
+# Problem_Two_b
+Problem_Two_bb <- matrix(c(1,1,2,2,0,1),ncol=3, byrow=T)
+# Problem_Two_bb
+Problem_Two_b %*% Problem_Two_bb
+```
+
+Problem 2. 
+c) Is it solvable? No, by rule, the number of columns in the first set would need to equal the number
+of rows in the second set. Since this example's first set has two columns and the second has one row, this is not solvable. 
+
+```{r}
+# As stated above, this function will not work. Error: non-conformable arguments. 
+# Problem_Two_c <- matrix(c(1,0,2,1,-2,1), ncol=2, byrow=T)
+# Problem_Two_c
+# Problem_Two_cc <- matrix(c(1,-1,0), ncol=3)
+# Problem_Two_cc
+# Problem_Two_c %*% Problem_Two_cc
+```
+
+Problem 3.
+a) Find the results of  the multiplication (A)(A^-1). Is it solvable? Why? Answer and explain.
+Yes, this is a solvable problem, as A is a square matrix; 2 X 2, AND it's determinant is not equal to zero. 
+
+```{r}
+Problem_Three_a <- matrix(c(2,1,1,2), ncol=2, byrow=T)
+# Problem_Three_a
+Problem_Three_a_inv= solve(Problem_Three_a)
+
+Problem_Three_a_inv
+# Or we can round. 
+round(Problem_Three_a %*% Problem_Three_a_inv, 10)
+```
+
+Problem 3.
+b) Find the results of the multiplication (A)(A^-1). Is it solvable? Why? Answer and explain.
+No, this function is not solvable, as we see that the determinant of the matrix is equal to zero, meaning it is not invertible and is singular. 
+
+```{r}
+Problem_Three_b <- matrix(c(2,0,1,0),ncol=2, byrow=T)
+Problem_Three_b
+#Problem_Three_b_inv = solve(Problem_Three_b)
+#Problem_Three_b_inv
+# Let's find out why this doesn't work.
+round(det(Problem_Three_b), 10)
+# We see that the determinant of our matrix is 0, which means it is not invertible
+```
+
+Problem 4. 
+a) Report the covariance and correlation matrix among husband responses (only focus on variables:
+h1, h2, h3, h4). Explain your findings. What variables are the most correlated variables? Why?
+ 
+```{r}
+love <- read.csv("http://tiny.cc/isqs6350_hus_wife")
+# love
+```
+```{r}
+# Correlation of husband variables 1-4. 
+corr_h = cor(love[,1:4])
+corr_h
+```
+```{r}
+# Covariance of husband variables 1-4. 
+cov_h = cov(love[,1:4])
+cov_h
+```
+
+Problem 4. 
+b) Report the covariance and correlation matrix among wife responses (only focus on variables: 
+w1, w2, w3, w4). Explain your findings. What variables are the most correlated variables? Why?
+ 
+```{r}
+# Covariance of wife variables 1-4. 
+cov_w =cov(love[, 5:8])
+cov_w
+```
+```{r}
+# Let's try the shorter operation to convert covariance of wife variable 1-4, to correlation.
+cov2cor(cov_w)
+```
+```{r}
+# Let's try another method to check the prior work.
+# Correlation of wife variables 1-4.
+corr_w = cor(love[,5:8])
+corr_w
+# Same results. 
+```
+
+Problem 4.  
+c) Find the Euclidean distance matrix for the first 10 rows of data (which refers to the data of the
+first 10 couples). Present your matrix in 2 decimal places. 
+ 
+```{r}
+
+# love
+love.s = scale(love[1:10,])
+d.s = dist(love.s[1:10, ])
+# d.s
+round((d.s), 2)
+
+```
+
+Problem 4.
+d) Given your distance matrix in part c, among those 10 couples, which two couples are the most 
+similar? For example, you can say couple 3 and 7 are the most similar (dissimilar) because their 
+distance is the smallest (or largest). 
+ 
+Couples 1 and 5 are most similar in this data set, as they have the lowest distance of the couples, while couples 1 and 10
+seem to be most dissmilar with a distance of 6.06; the highest of the data set. 
+ 
+
+Problem 5. 
+Convert this covariance matrix into the correspoding correlation matrix. 
+```{r}
+Cov = matrix(c(3.8778, 2.8110, 3.1480, 3.5062,
+               2.8110, 2.1210, 2.2669, 2.5690,
+               3.1480, 2.2669, 2.6550, 2.8341,
+               3.5062, 2.5690, 2.8341, 3.2352), byrow= T, nrow=4)
+# Cov
+```
+
+```{r}
+# Converting covariance matrix to the corresponsing correlation matrix. 
+cov2cor(Cov)
+```
+
+ 
+
+ 
+ 

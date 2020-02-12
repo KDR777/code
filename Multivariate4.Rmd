@@ -1,0 +1,343 @@
+---
+title: "MVAHW4.Rmd"
+author: "KDR"
+date: "11/14/2019"
+output: word_document
+---
+Problem 1
+Use Heptathlon data:
+
+
+a) Create a scaled distance matrix for observations.
+```{r}
+data("heptathlon",package="HSAUR2")
+#data<-heptathlon
+#data
+mydata <- heptathlon[-25,-8] # Remove the PNG as an outlier and the last variable (the final scores)
+#mydata # above we removed row 25 (PNG), column 8 (score)
+
+dist(scale(mydata))
+#d <- dist(mydata) # shows the distance between the values; distance matrix. 
+#d  
+#cmd <- cmdscale(d) # scaled distance matrix. 
+#cmd
+#plot(cmd) # Plot the scaled multidimensional matrix.  
+
+```
+
+b) Perform a graphical MDS analysis on the resulting "distance" matrix of part a. 
+  Label the points using the row names (set an appropriate cex for a better view).
+  Who is the most similar athlete to Scheider (SWI)?
+
+
+
+I'm comparing the 2D and 3D distance matrices to compare which is a better fit; 3D is closer to the original data. 
+```{r}
+#cmd2 <- cmdscale(dist(mydata), k=2)
+#dist(cmd2) # compare this with original dist matrix. 
+#dist(mydata)
+
+```
+
+```{r}
+#cmd3 <- cmdscale(dist(mydata), k=3)
+#dist(cmd3) 
+#dist(mydata)
+```
+Since the 3Dimensional model shows to be a better fit, I'll display a 3D model. 
+```{r}
+
+#install.packages("scatterplot3d")
+library("scatterplot3d")
+
+#scatterplot3d(cmdscale(dist(mydata), k=3))
+scatterplot3d(cmdscale(dist(mydata), k=3), pch = rownames(as.data.frame(mydata)))
+```
+
+But since a 2D model is easier to interpret, i'll also display it:
+```{r}
+
+twod <- cmdscale(dist(scale(mydata)), eig =T)
+twodeig <- twod$eig
+plot(twodeig)
+cumsum(twodeig[1:7])/sum(twodeig[1:7])
+# Two coordinates display 74% of the truth. 
+
+plot(twod$points[,1:2], pch = ".")
+text(twod$points[,1:2], labels = rownames(mydata), cex = 0.6)
+
+
+```
+The above shows that Braun's scores are closest of all the players to Scheider's. 
+```{r}
+cmdeig <- cmdscale(dist(mydata, method = "manhattan"), k = 10, eig =T)
+cumsum(cmdeig$eig[1:10])/sum(cmdeig$eig[1:10])
+# This shows that three coordinates provide 87% of the truth of the original data. 
+```
+
+c) Use the correlation matric of the data. Convert the correlation matrix to a distance matrix by computing (1-correlation). Explain why the resulting matrix represent "distances" between variables. 
+
+```{r}
+round(cor(mydata), 1)
+round(1-cor(mydata), 1)
+
+crmcor = cmdscale(1-cor(mydata), eig = T) # convert correlation matrix to a distance matrix. 
+```
+d) Perform a graphical MDS analysis on the resulting "distance" matrix of part c. 
+  Label the points using the column names (set an appropriate cex for a better view). What variables are more  similar (related) to each other?
+```{r}
+plot(crmcor$points[,1:2], pch = " ")
+text(crmcor$points[,1:2], labels = colnames(mydata), cex = 0.6)
+
+# The data show the similarities between variables, but not the meaning. We can see from the grouping that highjump, longjump, and shot have more in common with eachother than the other groups, while run800 and run200 show more commonality. 
+
+```
+
+
+
+
+
+Problem 2
+Use the TTU graduate student exit survey data
+```{r}
+grad <- read.csv("http://tiny.cc/isqs6350_grad", header = T)
+#grad
+```
+Two variables of interest are FacTeaching , a1, 2, 3, 4, 5 rating of teaching at TTU by the student, and COL, the college from which the student graduated. Perform a correspondence analysis of these two variables as follows.
+
+a) Construct the contingency table showing counts of students in all combinations of these two variables. 
+
+```{r}
+gradtbl <- table(grad$FacTeaching, grad$COL)
+gradtbl
+# Face teaching looks to be the ratings from students of each of the colleges. 
+```
+
+
+
+
+b) Construct the correspodence analysis (CA) plot and comment on the outlier, in light of your table in A. Then remove the outlier data you discovered and reconstruct the CA plot. 
+
+```{r}
+
+chisq.test(gradtbl)
+# We see a very low pvalue, thus we reject the independent hypothesis, meaning there is a relationship between our two variables of FacTeaching a COL; ratings and the college student attends. 
+
+```
+```{r}
+#install.packages("ca")
+library(ca)
+grad.ca <- ca(gradtbl)
+grad.ca.new <- ca(gradtblupdate <- gradtbl[,-5 ]) # removing dual, the 5th column since the data shows only 2 people in that college category, thus making it an outlier. 
+plot(grad.ca.new)
+
+```
+
+c) Pick three colleges in your graph, two of which are close to each other, and the third of which is far from your first two. Find the three conditional distributions of rating for your three colleges, and interpret the distance between the points in the graph in terms of "distances" between those three conditional distribuations. 
+
+
+EN (Engineering) and BA (Business Administration) angels are closer in proximity, while MC (Mass Communication) is much further away, thus very different from the first two colleges. 
+
+
+
+P(rating=1|BA) > P(rating=1):
+```{r}
+tbl2 <- gradtbl[,-5 ]
+prop.tbl2 <- prop.table(tbl2)
+round(prop.tbl2, 3)
+#We can make many observations with this table, and one would be P(student is in college of AG and gave rating of 1) = 0.002
+#let's review conditional distribution:
+
+prop.rating.tbl2 <- prop.table(tbl2, margin =1)
+round(prop.rating.tbl2, 3) #three decimals
+prop.rating.tbl2[1, 4] #BA and rating of 1
+sum(prop.table(tbl2)[1,])
+
+# The out put shows that the probability of rating of 1 given BA college, is higer (2.19), than the overall probability of other colleges getting a rating of 1 from their students (0.20)
+```
+
+P(rating=3|EN) > P(rating=3):
+```{r}
+
+tbl2
+
+prop.rating.tbl2 <- prop.table(tbl2, margin =1)
+round(prop.rating.tbl2, 3) #three decimals
+prop.rating.tbl2[3, 6] #EN rating 3
+sum(prop.table(tbl2)[3,])
+
+# We see that the probability of rating 3 given attendence of college EN (0.197), is slightly higher than the probability of rating 3 overall (0.165).  
+
+```
+
+P(rating=4|MC) > P(rating=4):
+```{r}
+tbl2
+
+prop.rating.tbl2 <- prop.table(tbl2, margin =1)
+round(prop.rating.tbl2, 3) #three decimals
+prop.rating.tbl2[4, 9] #MC rating 4
+sum(prop.table(tbl2)[4,])
+
+# We see the probability of rating a 4, given college MC, is significantly lower (0.027) than the overall campus of receiving a 4 (0.456)
+```
+
+
+
+
+Problem 3
+
+Use the Daily stock returns data set. The columns are companies; Man1, Man2, Man3 are manufacturing companies; Serv1, Serv2, Serv3, Serv4 are service companies. 
+
+
+```{r}
+stock <- read.csv("http://tiny.cc/isqs6350_stockReturn")
+stockconvert = stock*100
+
+dim(stockconvert) # we have 1021 observations, and 7 variables; 1021 days and the 7 companies.
+
+```
+
+
+a) Perform an exploratory factor analysis (EFA) using two factors.
+```{r}
+stock.fa <-factanal(stock, factors=2)
+stock.fa
+
+
+stock.fa$loadings[,1:2]
+stock.fa$loadings
+
+```
+b) Interpret the p-value reported in your EFA.
+p-value is greater than 0.05, thus we fail to reject the null hypothesis, whis is that 2 factors are sufficient.
+
+c) What are the factors (latent variables) in this model? Name them.
+So what influences the companies returns? Since information is not available, I will have to guess based on the output. 
+
+Based on interpreting the loadings, F1 is the latent variable for Manufacturing and F2 is the latent variable for service.
+
+
+d) Write the EFA regression model for variable Man1. For example: Man1 = af1 + bf2 +e
+Should indicated what are a and b. The model is Man1 = 0.462(f1) + 0.148(f2) + e. and e is a random variable. 
+
+
+
+f) What is the correlation between f2 and Serve2?
+
+he loading of Serv1 for F2 is the answer. 
+
+
+g) Compare the EFA approximation correlation metrix versus the actual correlation matrix. Report RMSE. What do you conclude? 
+
+Compared to the actual correaltion matrix based on the original data, they are very similar. Low rmse of 0.01, meaning the model fits well. 
+
+```{r}
+
+options(digits = 2) # 2 decimal places
+
+s.loading <- stock.fa$loadings[,1:2] # loadings for the first 2 factors
+
+corHat <- s.loading %*% t(s.loading) + diag(stock.fa$uniquenesses) # perform approximation modle (EFA model)
+corHat
+corr <- cor(stock)
+corr
+
+
+# discrepency, the root-mean-square error (RMSE)
+rmse = sqrt(mean((corHat-corr)^2))
+rmse
+
+
+
+
+```
+
+
+
+
+Problem 4
+
+Perform factor analysis on questions 22-35 of TTU web survery data.
+
+a) There are some missing values in this data. Find the correlation matrix based on pairwise deletion. You're supposed to use this correlation matrix as an input for EFA.
+
+
+```{r}
+ttuweb <- read.csv("http://tiny.cc/ttu_web")
+
+corr.ttu <- cor(ttuweb[,22:35], use = "pairwise.complete.obs")
+corr.ttu
+```
+b) Perform EFA suggesting two common factors. How would you name those factors?
+Factor 1 is highly correalted to Questions 28, 29, and 26, thus I would say Factor 1 is the students overall experience at the university. 
+
+Factor 2 is highly correlated to Questions 31, 32, and 33, thus I would say Factor 2 is how useful the students found the webpage. 
+```{r}
+efa = factanal(covmat = corr.ttu, factors = 2, n.obs = nrow(ttuweb)) 
+#efa
+#efa$loadings
+print(efa$loadings, cut = 0.5)
+efaload <- efa$loadings
+varr = var(efaload[,1]^2) +var(efaload[,2]^2)
+varr
+#varimax = 0.12
+
+```
+
+
+c) Perform EFA suggesting three common factors. How would you name those factor?
+Factor 3 is highly correlated to Questions 23 and 24, thus I would say it is the perceived overall value of the education received. 
+```{r}
+efa3 = factanal(covmat = corr.ttu, factors = 3, n.obs = nrow(ttuweb)) 
+#efa3
+#efa3$loadings
+# you can drop off some of the loadings below a certain level.
+print(efa3$loadings, cut = 0.5)
+```
+
+
+
+
+d) What rotation method is used in factanal as a default method? Explain what that rotation does. 
+varimax rotation is used by defaul in factor analysis, and it maximizes the sum squared variance of each loading. 
+
+e) Repeat part b (EFA with two factors) without rotation (inside factanal put rotation = "none"). Will you end up with the same names for your factors?
+Varimax without rotation is 0.078 compared to 0.12 when we originally implemented it. 
+Factor 1: Questions 26, 28, and 29, meaning my assumption would not change from my original interpretation. 
+Factor 2: Questions 30-34, which still reference the university webpage, so again, my interpretatin would remain the same. 
+
+```{r}
+efa2 = factanal(covmat = corr.ttu, factors = 2, n.obs = nrow(ttuweb), rotation= "none") 
+#efa2
+
+print(efa2$loadings, cut = 0.5)
+efa3 <- efa2$loadings[,1:2]
+
+varefa = var(efa3[,1]^2) + var(efa3[,2]^2)
+varefa
+#varimax is 0.078 compared to 0.12 when we originally used rotation.
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

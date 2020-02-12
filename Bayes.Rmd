@@ -1,0 +1,180 @@
+---
+title: "Bayes.Rmd"
+author: "Kristan D Ramirez"
+date: "2/11/2020"
+output: word_document
+---
+
+# Naïve Bayes 
+
+
+## Conditional probability of the "Delay" given "Carrier = DL," "Day of Week=Saturday (7)," "Destination = LGA," and "Origin = DCA." 
+
+
+```{r}
+
+delaydata <- read.csv('/Users/kris/Documents/delay.csv')
+#delaydata
+
+#Label Status of flight:
+delaydata$Status[delaydata$Status == '0'] <- 'On-Time'
+delaydata$Status[delaydata$Status == '1'] <- 'Delayed'
+#str(delaydata) # Verify.
+
+
+# Label 'Day of Week':
+delaydata$Day.of.Week[delaydata$Day.of.Week=='1'] <- 'Sun'
+delaydata$Day.of.Week[delaydata$Day.of.Week=='2'] <- 'Mon'
+delaydata$Day.of.Week[delaydata$Day.of.Week=='3'] <- 'Tue'
+delaydata$Day.of.Week[delaydata$Day.of.Week=='4'] <- 'Wed'
+delaydata$Day.of.Week[delaydata$Day.of.Week=='5'] <- 'Thu'
+delaydata$Day.of.Week[delaydata$Day.of.Week=='6'] <- 'Fri'
+delaydata$Day.of.Week[delaydata$Day.of.Week=='7'] <- 'Sat'
+
+# Convert 'Day of Week' to a factor:
+delaydata2 <- cbind(delaydata, Day.of.Week = as.factor(delaydata$Day.of.Week))
+delaydata3 <-delaydata2[-1]
+#str(delaydata3) # Verify.
+
+
+
+
+# Convert 'Status' to a factor:
+delaydata4 <- cbind(delaydata3, Status = as.factor(delaydata3$Status))
+delaydata5 <- delaydata4[-4]
+str(delaydata5) # Verify.
+
+
+
+
+# Partition Data Sets into testing and training:
+# 70% of data into trainging data set.
+# 30% of data into testing data set.
+library(caret)
+set.seed(1234)
+intrain <- createDataPartition(y=delaydata5$Status, p=0.7, list=FALSE) 
+trainSet <- delaydata5[intrain, ]
+testSet <- delaydata5[-intrain, ]
+
+#summary(trainSet) 
+#summary(testSet)
+#str(trainSet) # 300 obs, 5 vars.
+#str(testSet) # 128 obs, 5 vars.
+
+library(e1071)
+# Conditional Probability for calculation:
+Naive <- naiveBayes(Status~., data=trainSet)
+Naive 
+
+
+
+# Prediction Function:
+Predict <- predict(Naive, newdata = testSet, type='class')
+
+
+# Accuracy of the  predicted model:
+Actual <- testSet$Status
+
+
+confusionMatrix(Actual, Predict)
+# Accuray of the predicted model is 93.7%.
+```
+
+
+###### Calculate the conditional probability of the "Delay" given "Carrier = DL," "Day of Week=Saturday (7)," "Destination = LGA," and "Origin = DCA."
+
+###### (Status = Delayed )  given (Carrier = DL, Day of Week = 7, Destination = LGA, Origin = DCA)
+
+
+###### P(Carrier = DL)  --->   0.043
+
+###### P(Day of Week = Saturday)  --->  0.086
+
+###### P(Destination = LGA)  --->   0.478
+
+###### P(Origin = DCA)   --->   0.478
+
+###### P(Status = Delayed)  --->  0.076
+
+## COMBINE :::: 0.043 X 0.086 X 0.478 X 0.478 X 0.076 = .0000642
+
+
+
+###### P(Carrier = DL)  ---> 0.125
+
+###### P(Day of Week = Saturday)  ---> 0.172
+
+###### P(Destination = LGA)  ---> 0.424
+
+###### P(Origin = DCA)  ---> 0.528
+
+###### P(Status = On Time)  ---> 0.923
+
+
+## COMBINE :::: 0.125 X 0.172 X 0.424 X 0.528 X 0.923 = .0044426
+
+
+## P(Status = 1 ) |(Carrier = DL, Day of Week = 7, Destination = LGA, Origin = DCA) = (0.000134) / ( 0.000134 + 0.004012) = 0.032
+
+
+## FINAL CALCULATION :: (.0000642) / (.0000642 + .0044426) =  0.01425 =)
+
+
+#Calculate the conditional probability of the "Delay" given "Carrier = DL," "Day of Week=Saturday (7)," "Destination = LGA," and "Origin = DCA."
+```{r}
+## predict probabilities
+pred.prob <- predict(Naive, newdata = testSet, type = "raw")
+## predict class membership
+pred.class <- predict(Naive, newdata = testSet)
+
+#Calculate the conditional probability of the "Delay" given "Carrier = DL," "Day of Week=Saturday (7)," "Destination = LGA," and "Origin = DCA."
+df <- data.frame(actual = testSet$Status, predicted = pred.class, pred.prob)
+df[testSet$Carrier == "DL" & testSet$Day.of.Week == "Sat" & testSet$Destination == "LGA" & 
+     testSet$Origin == "DCA",]
+
+
+
+```
+
+
+
+
+
+## DELAYS ON ORIGINAL DATA:
+###### Delays in the original data show 15 occur on Monday, 2 delayed flights on Saturday, 14 on Sunday, and 1 on Thursday; about 7.4% of flights were delayed. 
+
+```{r echo=TRUE, fig.ratina=300, fig.cap="Bar Plot showing delayed flights for original dataset.", fig.align='center'}
+table(delaydata5$Day.of.Week, delaydata5$Status)
+count <-table(delaydata5$Status=="On-Time", delaydata5$Day.of.Week)
+# total of 428 flights, with 32 delays, and 396 on time. 
+
+# Barplot of delayed flights for each day of the week:
+barplot(count, main = "Weekday Flight Delays", xlab= "Day Of The Week", ylab= "Counts", col= 'white')
+```
+
+## ACTUAL DELAY ON TEST DATA: 
+
+###### Monday show 5 delayed flights, Saturday: 1, and Sunday: 3. 9/127 flights are shown as delayed; 7.08%.
+
+```{r echo=TRUE, fig.ratina=300, fig.cap="Bar Plot showing Actual delayed flights from test data set.", fig.align='center'}
+table(testSet$Day.of.Week, Actual)
+Act_count <- table(Actual=="On-Time", testSet$Day.of.Week)
+#Act_count 
+barplot(Act_count, main = "Weekday Flight Delays", xlab="Day of The Week", ylab="Counts", col= 'white')
+```
+
+
+
+## PREDICTED DELAYS: 
+
+###### The prediction model shows one delay for Monday, while the reamining flights are predicted to be on-time. Out of 127 flights, .7% of flights (1/127) are predicted to be delayed. PREDICTED and ACTUAL delays are comparible; .07 vs 7.08%.  
+
+
+```{r echo=TRUE, fig.ratina=300, fig.cap="Bar Plot showing the Predicted delayed flights on the test dataset.", fig.align='center'}
+table(testSet$Day.of.Week, Predict)
+Pred_count <- table(Predict=="On-Time", testSet$Day.of.Week)
+#Pred_count # Monday has one delay. 
+barplot(Pred_count, main = "Weekday Flight Delays", xlab="Day of The Week", ylab="Counts", col= 'white')
+
+
+```
