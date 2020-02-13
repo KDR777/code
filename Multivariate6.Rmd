@@ -1,12 +1,12 @@
 ---
-title: "HW6.Rmd"
+title: "MVA6.Rmd"
 author: "KDR"
 date: "11/21/2019"
 output: word_document
 ---
 
 
-Homework Assignment 6. Euro dataset.
+Euro dataset.
 ```{r}
 euro <- read.csv("http://tiny.cc/isqs6350_euroemp", header=TRUE, row.names=1)
 head(euro)
