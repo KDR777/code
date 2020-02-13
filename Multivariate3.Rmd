@@ -1,12 +1,12 @@
 
 
 ---
-output:
+output:MVA3
   word_document: default
   html_document: default
 ---
 Kristan D. Ramirez
-Homework Assignment #3. 
+ 
 
 PROBLEM 1.
 a) Perform principal component analysis using correlation matrix. You dont need to 
