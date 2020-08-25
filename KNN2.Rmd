@@ -132,4 +132,4 @@ confusionMatrix(data.testLabels, predict)
 
 ```
 
-# Best k = 17. Only b/c it's the smallers. All of the Ks TP + TN/ Total equaled the same (.69).
+# Best k = 17. All of the following Ks TP + TN/ Total equaled the same; (.69).
