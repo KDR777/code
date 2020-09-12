@@ -1,0 +1,116 @@
+
+To gather the data in 'KDR.txt' I used a web scrapper to gather the contents of my social media page on Twitter.com. After gathering the data, I then uploaded it to the RStudio database for cleaning, where I omitted features specific to Twitter; datetime, punctuation, emojis, photos, and then the basics of text file cleaning: stemming, eliminating common words, stripping the document, etc. 
+
+After cleaning the text I ran a K test and LSA model to determine the correct number of k's (Topics) in the documents, and separte topics and terms into two files, which I then exported to my files for later review, if needed. 
+
+After separting topics and terms, I was able to find which terms were used when discussing one topic, and from these terms I could then determine the topic. See below for the assumed topics based on terms. 
+I used this on my personal account, but there are many applications for Latent Semantic Analysis, of which some can be controversial. 
+
+```{r}
+library(arules)
+library(tm)
+library(stringr)
+library(SnowballC)
+library(wordcloud)
+library(Matrix)
+library(lsa)
+library(textclean)
+
+file <- '/Users/kris/Documents/KDR.txt'
+
+
+text = file(file, open="r")
+text.decomposition= readLines(text)
+text.decomposition[2]
+
+corpus <- Corpus(VectorSource(text.decomposition))
+corpus
+
+corpus <- tm_map(corpus, strip)
+corpus <- tm_map(corpus, PlainTextDocument)
+corpus <- tm_map(corpus, tolower)
+
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removePunctuation)
+
+
+stopwords("english")
+
+selfstopwords <- c("hi", "cdt")
+corpus <- tm_map(corpus, removeWords,
+                 c(stopwords("english"), selfstopwords))
+
+writeLines(as.character(corpus[[2]]))
+
+corpus <- tm_map(corpus, replace_emoji)
+
+corpus <-tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, stemDocument)
+
+
+# Topic K selection
+candi_K <- c(2, 3, 4, 5, 6, 7, 8, 9, 10)
+results <- matrix(0, nrow=length(candi_K), ncol =2)
+colnames(results) <- c("k", "Perplexity")
+
+corpus.dtm <- DocumentTermMatrix(corpus)
+
+
+# Run LDA model w/ Ks
+for (j in 1:length(candi_K)){
+  k<- candi_K[j]
+  SEED <- 2019
+  text.lda<-LDA(corpus.dtm, k=k, method= "Gibbs", # Monte Carlo Algo (Gibbs)
+                control= list(seed=SEED, burnin=1000, #Model will run 1000 times prior to recording any results
+                              thin=100, iter=1000)) # Set to run another 1000 iterations, and record every 100th run. Can play w/. 
+  results[j,]<-c(k, perplexity(text.lda, newdata = corpus.dtm))
+  
+}
+
+
+
+results_df<- as.data.frame(results)
+
+
+# We would choose k= 7 (smallest perplexity). We have 7 topics.
+
+# So, let's set k=7 and run model. 
+k=7
+SEED <- 123
+text.lda<-LDA(corpus.dtm, k=k, method="Gibbs",
+              control = list(seed=SEED, burnin=1000,
+                             thin=100, iter=1000))
+
+# lda is a probability model
+
+Terms <-posterior(text.lda)$terms
+Topics<- posterior(text.lda)$topics
+
+write.csv(t(as.matrix(Terms)), file="KDRTermsLDA.csv")
+write.csv(as.matrix(Topics), file= "KDRTopicsLDA.csv")
+
+#top 5 terms for each of the 7 topics
+top.terms <- terms(text.lda, 10)
+
+# By the output, I can infer that Topic 6 is regarding data security (due to the term "hash")
+
+# Topic 5 likely about analytics, inferred by the term "data."
+
+# Topic 3 likely about a work position, inferred by terms "company", "right."
+
+# Topic 1 likely about healthcare, inferred by the term "patient"
+
+library(wordcloud)
+wordcloud(corpus, min.freq = 10, random.order = FALSE)
+wordcloud(corpus, min.freq = 10, colors=brewer.pal(8,"Dark2"))
+
+```
+
+
+
+
+
+
+
+
+
