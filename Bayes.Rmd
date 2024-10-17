@@ -1,6 +1,6 @@
 ---
 title: "Bayes.Rmd"
-author: "Kristan D Ramirez"
+author: KDR
 date: "2/11/2020"
 output: word_document
 ---
