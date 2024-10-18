@@ -1,0 +1,131 @@
+---
+title: "Demand"
+output: pdf_document
+date: "2024-09-19"
+---
+
+GOAL: FORECAST NEXT MONTH'S DEMAND FOR PRODUCT # S18_3136 IN ORDER TO DETERMINE THE COMPANY'S PURCAHSE QUANTITY FOR A MAXIMUM PROFIT. 
+
+Let the selling price = 18
+Let the cost = 12
+Let the discount price = 9
+
+# Net Profit = $18.00 x min{Q,D} + $9.00 x max(0, Q - D) - $12.00 x Q
+
+Generate random values for the uncertain measures to compute an output (like profit), and simulate this process multiple times (law of large numbers), then determine the distribution of the output to find the most appropriate quantity to purchase for next month in order to maximize profits. 
+
+Reason: If the co. over orders, they waste resources, but if they under order they forfeit additional profit. 
+
+```{r}
+
+# Monthly demand for product number 'S18_3136':
+Data <- read.csv("/Users/kdr/Documents/AmazonInfo/AmazonDatasets/monthlysales.csv")
+
+
+R = 18 # Selling price
+C = 12 # Cost
+S = 9 # Discount price
+
+# Model
+netProfitFun = function(D, Q, R, S, C) {
+  R*min(D,Q) + S * max(0,Q-D) - C*Q
+}
+
+```
+
+Monte Carlo Simulation
+
+In the uploaded data set (Data), the historic demand is labeled as "Quantity" 
+
+```{r}
+D = Data$Quantity
+
+num_sim = 1000
+
+Qrange = 20:150
+
+sim_D <- sample(D, num_sim, replace = TRUE) # resampling
+
+profitMatrix <- matrix(nrow = num_sim, ncol = length(Qrange))
+
+j = 0 
+for (Q in Qrange) {
+  j = j+1
+  for (i in 1:num_sim) {
+    profitMatrix[i, j] = netProfitFun(sim_D[i], Q, R, S, C)
+  }
+}
+
+# Expected profit for each Q
+colMeans(profitMatrix)
+
+plot(Qrange, colMeans(profitMatrix), ylab = "Expected Profit", xlab = "Q")
+
+# The plot shows a steep decline at around 40 - 50, so we can now update the QRange to 20 - 50 for a more precise reading, which will help to determine the most appropriate Q. 
+```
+
+
+```{r}
+Qrange = 20:50
+
+sim_D <- sample(D, num_sim, replace = TRUE) # resampling
+
+profitMatrix <- matrix(nrow = num_sim, ncol = length(Qrange))
+
+j = 0 
+for (Q in Qrange) {
+  j = j+1
+  for (i in 1:num_sim) {
+    profitMatrix[i, j] = netProfitFun(sim_D[i], Q, R, S, C)
+  }
+}
+
+
+plot(Qrange, colMeans(profitMatrix), ylab = "Expected Profit", xlab = "Q")
+
+# After reviewing the plot, we can pinpoint the best Q even further with an updated QRange of 32-42
+```
+
+
+```{r}
+Qrange = 32:42
+
+sim_D <- sample(D, num_sim, replace = TRUE) # resampling
+
+profitMatrix <- matrix(nrow = num_sim, ncol = length(Qrange))
+
+j = 0 
+for (Q in Qrange) {
+  j = j+1
+  for (i in 1:num_sim) {
+    profitMatrix[i, j] = netProfitFun(sim_D[i], Q, R, S, C)
+  }
+}
+
+
+plot(Qrange, colMeans(profitMatrix), ylab = "Expected Profit", xlab = "Q")
+
+
+# The most appropriate quantity to order for the coming month should be 38. 
+```
+
+Drawbacks: outcomes are more precise when more data is available. The above example uses only 22 months of historic demand data. Also note the limitation that comes with sampling; we cannot include any demand data point into the calculation that is not already available in the historic data. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
