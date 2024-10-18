@@ -1,0 +1,71 @@
+---
+title: "MBA-AA"
+output: pdf_document
+date: "2024-09-29"
+---
+
+# Could be used with any purchasing data (clothing, etc.) to see what customers are pairing. 
+
+```{r}
+library(arules)
+data(Groceries)
+
+apriori(Groceries)
+summary(Groceries)
+
+# explore the data
+dim(Groceries) #9835 transactions/rows, 169 items/columns
+str(Groceries) # review datatypes
+size(Groceries) 
+length(Groceries)
+
+# Inspect the first few recordsE:
+inspect(Groceries[1:3])
+
+# Let's set to products purchased at least twice a day/60 times a month or whichever frequency you'd find interesting:
+# min support level is set by dividing the 60 by however many transactions you have in the data set (in this case, its 60/9835 = .006)
+
+# Confidence level is the percent of time the rule has to be correct. In this case, I will randomly set it at 0.25. The rule will need to be correct at least 25% of the time. (would increase this for business case)
+
+myRules <- apriori(Groceries, parameter = list(support = 0.006, confidence = 0.25, minlen = 2))
+
+# Review how many rules were met:
+summary(myRules) # 463
+
+# Inspect first 3 rules from above function:
+inspect(myRules[1:3])
+
+# Inspect all rules:
+inspect(myRules)
+
+# A high lift usually means the rules is important
+inspect(sort(myRules, by = "lift")[1:5]) # sorting by lift and only first top 5 rules with the highest lift
+
+# Find rules that include berries:
+berryRules <- subset(myRules, items %in% "berries")
+inspect(berryRules)
+
+
+# Find tules that include berries an dyogurt:
+berryRules <- subset(myRules, items %in% c("berries", "yogurt"))
+inspect(berryRules)
+
+#Partial matching with pin (like citrus fruit and tropical fruit)
+fruitRules <- subset(myRules, items %pin% "fruit")
+inspect(fruitRules)
+
+# Increase confidence level to 90% and update rules to maxlen 3:
+myRules2 <- apriori(Groceries, parameter = list(support = 0.001, confidence = 0.9, maxlen = 4))
+myRules2 # 67 rules created with new requirements 
+
+myRules3 = sort(myRules2, by = "lift", decreasing = TRUE)
+inspect(myRules3[1:5])
+inspect(myRules3)
+
+beerRules <- apriori(Groceries, parameter = list(support=0.0015, confidence = 0.3), appearance = list(default="lhs", rhs="bottled beer"))
+beerRules
+inspect(beerRules)
+
+library(arulesViz)
+plot(beerRules, method = "graph", measure = "lift", shading = "confidence")
+```
