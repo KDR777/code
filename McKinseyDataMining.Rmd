@@ -1,0 +1,227 @@
+---
+title: "PredictionUsingPreselectedModel"
+output: pdf_document
+date: "2024-10-09"
+---
+# Read txt files in one folder:
+filepath <- "/Users/kdr/Documents/AmazonInfo/McKinseyStateofFashion/softxt"
+setwd(filepath)
+dir(filepath)
+corpus <- Corpus(DirSource(filepath))
+corpus # Now all text files are combined into one object
+
+
+# Working with a single file containing multiple reviews:
+filepath <- "/Users/kdr/Documents/AmazonInfo/McKinseyStateofFashion"
+
+
+# Data cleaning/pre-processing:
+corpus <- tm_map(corpus, PlainTextDocument)
+corpus <- tm_map(corpus, tolower)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removePunctuation)
+
+
+# Run chunck:
+stopwords("english")
+selfstopwords <- c("McKinsey", "Fashion", "Retail")
+corpus <- tm_map(corpus, removeWords,
+                 c(stopwords("english"), selfstopwords))
+
+
+
+corpus <- tm_map(corpus, stripWhitespace)
+writeLines(as.character(corpus[[4]]))
+
+corpus <- tm_map(corpus, stemDocument)
+writeLines(as.character(corpus[[8]]))
+
+# Pre-processing is complete. 
+
+
+
+
+
+
+
+# Topic Models:
+
+# Topic models are used to discover hidden topic-based patterns. The algorithms for topic models are Latent Semantic Analysis (LSA) and LDA.
+
+# Words related to topics, and topics related to documents.
+
+# The two algorithms: Linear algebra vs probabilistic modeling. 
+
+# Find the number of topics we should search for/ candidate for topic K
+can_K <- c(2,3,4,5,6,7,8,9,10)
+results <- matrix(0, nrow=length(can_K), ncol=2)
+colnames(results)<-c("k","Perplexity")
+
+# Create document term matrix from the corpus
+corpus.dtm <- DocumentTermMatrix(corpus)
+
+
+# Run the LDA model with KS
+for (j in 1:length(can_K)){
+k<-can_K[j]
+SEED <-2024
+text.lda<-LDA(corpus.dtm, k=k, method ="Gibbs",
+control = list(seed=SEED, burnin=10000, thin=100, iter=1000))
+results[j,]<-c(k, perplexity(text.lda, newdata=corpus.dtm))
+}
+
+results_df<-as.data.frame(results)
+
+results_df
+
+# We want the lowest perplexity, but the lowest of the K from 1-10 is 10 (1714.087), so lets increase the range and run it again. 
+
+can_K <- c(10,11,12,13,14,15,16,17,18)
+results <- matrix(0, nrow=length(can_K), ncol=2)
+colnames(results)<-c("k","Perplexity")
+
+# Run the LDA model with KS
+for (j in 1:length(can_K)){
+k<-can_K[j]
+SEED <-2024
+text.lda<-LDA(corpus.dtm, k=k, method ="Gibbs",
+control = list(seed=SEED, burnin=10000, thin=100, iter=1000))
+results[j,]<-c(k, perplexity(text.lda, newdata=corpus.dtm))
+}
+
+results_df<-as.data.frame(results)
+
+results_df
+
+# Set K at 10 (10 topics) with 1714.087 perplexity.
+
+# Set you K to the K with the lowest perplexity, then re-run the model
+k <- 10
+SEED <- 2024
+text.lda <- LDA(corpus.dtm, k=k, method = "Gibbs",
+                control = list(seed=SEED, burnin = 1000,
+                               thin = 100, iter = 1000))
+
+
+
+# LDA probability model
+Terms <- posterior(text.lda)$terms
+Topics <- posterior(text.lda)$topics
+
+
+write.csv(t(as.matrix(Terms)), file = file.path("McKinseySOF_Terms_LDA.csv") # transpose
+write.csv(as.matrix(Topics), file = "McKinseySOF_Topics_LDA.csv")
+
+# Lets now find the top 10 terms for each of the k topics
+top.terms <- terms(text.lda, 10)
+write.csv(as.matrix(top.terms), file = "Top10_McKinseySOFTerms.csv")
+
+
+
+
+
+
+
+
+# Data format using tidy function
+library(topicmodels)
+library(tidytext)
+topics <- tidy(text.lda, matrix = "beta")
+topics
+
+# Top 5 term in each topic (run chunk):
+library(dplyr)
+top_terms <- topics %>%
+group_by(topic) %>%
+top_n(5, beta) %>%
+arrange(topic, -beta)
+
+top_terms
+
+# Document-term probability
+pro_document <- tidy(text.lda, matrix = "gamma")
+pro_document
+
+# This means that 8.81% of the words generated in doc 1 are realted to topic 1, and so on.
+
+# Use the document term matix to find the most common words associated with document 6:
+tidy(corpus.dtm) %>%
+filter(document==6) %>%
+arrange(desc(count))
+
+
+
+
+
+
+
+
+
+# TERM DOCUMENT MATRIX and LSA
+
+corpus.tdm <- TermDocumentMatrix(corpus)
+
+corpus_freq_words <- findFreqTerms(corpus.tdm, 15)
+
+#Create weighted TDM
+corpus_tdm_weighted <- weightTfIdf(corpus.tdm)
+
+# specify dimension 
+userdimension = 10
+
+library(lsa)
+corpus_tdm_weighted_LSA <-lsa(corpus_tdm_weighted, dims=userdimension)
+summary(corpus_tdm_weighted_LSA)
+
+# term matrix
+tk <- as.matrix(corpus_tdm_weighted_LSA$tk)
+# diagonal matrix
+sk <- Diagonal(n=userdimension, as.matrix(corpus_tdm_weighted_LSA$sk))
+# doc matrix
+dk<- as.matrix(corpus_tdm_weighted_LSA$dk)
+
+# term loading
+termloading <- tk %*% sk
+write.csv(as.matrix(termloading), file="McKinseySOFterm_loading.csv")
+
+# document loading
+docloading <- dk %*% sk
+write.csv(as.matrix(docloading), file ="McKinseySOFdoc_loading.csv")
+
+
+
+
+
+
+
+
+# corpus.tdm can be used to compare term count usage.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
