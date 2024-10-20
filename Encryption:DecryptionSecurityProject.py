@@ -1,12 +1,5 @@
 
 
-###### TOP SECRET INFORMATION #########
-###### NO TRUDY'S ALLOWED #############
-###### FOR  BOB'S EYES ONLY ###########
-######   =)  =)  =)   =)   ############           
-
-
-
 # This code will take a document, encrypt it, decrypt it, and ensure integrity. 
 # This is useful when you and another are sending sensitive information and want
 # to ensure you and the recipient are the only two whom can read the file. 
