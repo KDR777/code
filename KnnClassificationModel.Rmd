@@ -23,7 +23,7 @@ head(HF_n)
 # mean of platelets was normalized from 263358 to 0.29
 summary(HF_n$platelets)
 
-library(class) # hass knn function
+library(class) # has knn function
 
 set.seed(123)
 idx <- sample(c("train", "test"), nrow(HF_n), replace = TRUE, prob = (c(0.80, 0.20))) # sampling with replacement simply means that each number is “replaced” after it is selected, thus can be selected multiple times, making it truly random each time. 
