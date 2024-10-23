@@ -1,0 +1,71 @@
+# Prediction model for heart failure based on multiple variables. 
+
+classify_HF <- read.csv("/Users/kdr/Documents/AmazonInfo/AmazonDatasets/heart_failure_clinical_records_dataset.csv") 
+head(classify_HF) # review first few rows
+str(classify_HF) # review data types
+
+# Review the variable of interest. 96 death events out of 299. 
+table(classify_HF$DEATH_EVENT)
+round(prop.table(table(HF$DEATH_EVENT)) *100, digits=1) # 32.1% of death events in the data set.
+
+# Explore the data and you'll find there's a large gap when comparing each variables' mean. (platelets, for examples: 263358 compared to ejection_fraction mean of 38.) The data needs to be normalized.
+summary(classify_HF)
+summary(classify_HF[c("platelets", "ejection_fraction")])
+
+# Normalize
+normalize <-function(x){
+  return ((x-min(x))/(max(x)-min(x)))
+}
+
+HF_n <- as.data.frame(lapply(classify_HF[1:13], normalize))
+head(HF_n)
+
+# mean of platelets was normalized from 263358 to 0.29
+summary(HF_n$platelets)
+
+library(class) # hass knn function
+
+set.seed(123)
+idx <- sample(c("train", "test"), nrow(HF_n), replace = TRUE, prob = (c(0.80, 0.20))) # sampling with replacement simply means that each number is “replaced” after it is selected, thus can be selected multiple times, making it truly random each time. 
+
+train <-HF_n[idx=="train", 1:12] # leave out target variable
+test <- HF_n[idx=="test", 1:12]
+
+str(train) # 243 observations
+str(test) # 56 observations
+
+
+# training labels
+HF_n.trainLabels <- HF_n[idx=="train", 13]
+
+# testing labels
+HF_n.testLabels <- HF_n[idx=="test", 13]
+
+# build knn classifier model
+prediction <- knn(train = train, test = test, cl = HF_n.trainLabels, k = 13) 
+prediction
+
+# Compare the predicted outputs to the actual outouts (predicted heart failure vs actual)
+library(gmodels)
+CrossTable(x=HF_n.testLabels, y=prediction) # 37 of the 38 were corrected assigned to No HF, and 14 of the 18 were correctly assigned to HF. 
+library(caret)
+prediction <- as.factor(prediction)
+HF_n.testLabels <- as.factor(HF_n.testLabels)
+confusionMatrix(HF_n.testLabels, prediction) # 73.21 % accurate predictions. 
+
+
+
+
+
+
+
+
+
+
+# dataset: https://archive.ics.uci.edu/dataset/519/heart+failure+clinical+records
+
+
+
+
+
+
